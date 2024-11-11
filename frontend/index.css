@@ -1,0 +1,54 @@
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: none;
+    border-radius: 10px;
+}
+
+.card-title {
+    color: #2c3e50;
+}
+
+.btn {
+    border-radius: 5px;
+    padding: 10px 20px;
+}
+
+.form-control {
+    border-radius: 5px;
+}
+
+#balance {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    margin: 20px;
+}
+
+#loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #34495e;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}

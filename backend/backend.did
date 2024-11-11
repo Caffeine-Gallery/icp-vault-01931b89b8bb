@@ -1,0 +1,12 @@
+type TokenDApp = 
+ service {
+   deposit: (nat) -> (Result);
+   getBalance: () -> (nat) query;
+   withdraw: (principal, nat) -> (Result);
+ };
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
+service : () -> TokenDApp
