@@ -25,10 +25,15 @@
                                 <p id="balance" class="h2">0 ckSepoliaUSDC</p>
                             </div>
 
-                            <div class="mb-3">
-                                <label for="depositAmount" class="form-label">Deposit Amount</label>
-                                <input type="number" class="form-control" id="depositAmount" min="0">
-                                <button id="depositButton" class="btn btn-success w-100 mt-2">Deposit</button>
+                            <div class="mb-4">
+                                <h5>Your Delegated Identity</h5>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="delegatedId" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="copyDelegatedId">
+                                        Copy
+                                    </button>
+                                </div>
+                                <small class="text-muted">Use this address to deposit ckSepoliaUSDC from your wallet</small>
                             </div>
 
                             <div class="mb-3">
