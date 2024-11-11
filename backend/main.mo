@@ -14,7 +14,7 @@ import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 
 actor class TokenDApp() {
-    // ckUSDC token canister interface
+    // ckSepoliaUSDC token canister interface
     type Token = actor {
         icrc1_balance_of : shared query { owner : Principal; subaccount : ?[Nat8] } -> async Nat;
         icrc1_transfer : shared {
@@ -27,7 +27,7 @@ actor class TokenDApp() {
         } -> async { Ok : Nat; Err : Text };
     };
 
-    let ckUSDC_canister : Token = actor("mxzaz-hqaaa-aaaar-qaada-cai");
+    let ckSepoliaUSDC_canister : Token = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
 
     stable var balanceEntries : [(Principal, Nat)] = [];
     var balances = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
@@ -38,13 +38,13 @@ actor class TokenDApp() {
         };
 
         try {
-            let currentBalance = await ckUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null });
+            let currentBalance = await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null });
             if (currentBalance < amount) {
                 return #err("Insufficient balance");
             };
 
-            let result = await ckUSDC_canister.icrc1_transfer({
-                to = { owner = Principal.fromText("mxzaz-hqaaa-aaaar-qaada-cai"); subaccount = null };
+            let result = await ckSepoliaUSDC_canister.icrc1_transfer({
+                to = { owner = Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai"); subaccount = null };
                 amount = amount;
                 fee = null;
                 memo = null;
@@ -78,7 +78,7 @@ actor class TokenDApp() {
         };
 
         try {
-            let result = await ckUSDC_canister.icrc1_transfer({
+            let result = await ckSepoliaUSDC_canister.icrc1_transfer({
                 to = { owner = to; subaccount = null };
                 amount = amount;
                 fee = null;
