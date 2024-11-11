@@ -53,11 +53,19 @@ async function handleAuthenticated() {
     balanceInterval = setInterval(updateBalance, 5000);
 }
 
+function formatBalance(rawBalance) {
+    const decimals = 6; // USDC has 6 decimal places
+    const balance = Number(rawBalance) / Math.pow(10, decimals);
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    }).format(balance);
+}
+
 async function updateBalance() {
     try {
         const balance = await actor.getBalance();
-        const formattedBalance = Number(balance) / 1_000_000; // Convert to USDC units (6 decimals)
-        balanceElement.textContent = `${formattedBalance.toFixed(6)} ckSepoliaUSDC`;
+        balanceElement.textContent = `${formatBalance(balance)} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);
     }
@@ -94,7 +102,8 @@ withdrawButton.addEventListener("click", async () => {
         return;
     }
 
-    const amount = BigInt(Math.floor(parseFloat(amountInput) * 1_000_000)); // Convert to token units
+    const decimals = 6;
+    const amount = BigInt(Math.floor(parseFloat(amountInput) * Math.pow(10, decimals)));
     const recipientPrincipal = document.getElementById("recipientPrincipal").value;
     
     if (!recipientPrincipal) {
