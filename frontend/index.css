@@ -43,7 +43,7 @@
     color: #34495e;
 }
 
-#delegatedId {
+#principalId {
     font-family: monospace;
     font-size: 0.9rem;
 }
@@ -52,8 +52,10 @@
     margin-bottom: 0.5rem;
 }
 
-.text-muted {
-    font-size: 0.8rem;
+.alert-info {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #495057;
 }
 
 input[type="number"]::-webkit-inner-spin-button,

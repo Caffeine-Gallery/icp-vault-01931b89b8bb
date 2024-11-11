@@ -20,20 +20,25 @@
                         </div>
 
                         <div id="mainSection" class="d-none">
-                            <div class="mb-4 text-center">
-                                <h4>Your Balance</h4>
-                                <p id="balance" class="h2">0 ckSepoliaUSDC</p>
-                            </div>
-
                             <div class="mb-4">
-                                <h5>Your Delegated Identity</h5>
+                                <h5>Your Principal ID</h5>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="delegatedId" readonly>
-                                    <button class="btn btn-outline-secondary" type="button" id="copyDelegatedId">
+                                    <input type="text" class="form-control" id="principalId" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="copyPrincipalId">
                                         Copy
                                     </button>
                                 </div>
-                                <small class="text-muted">Use this address to deposit ckSepoliaUSDC from your wallet</small>
+                                <div class="alert alert-info mt-2">
+                                    <small>
+                                        To deposit ckSepoliaUSDC, send tokens to this principal using the OISY wallet. 
+                                        Your balance will automatically update every 5 seconds.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="mb-4 text-center">
+                                <h4>Your Balance</h4>
+                                <p id="balance" class="h2">0 ckSepoliaUSDC</p>
                             </div>
 
                             <div class="mb-3">

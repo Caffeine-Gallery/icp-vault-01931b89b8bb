@@ -6,6 +6,7 @@ import { createActor } from "declarations/backend";
 let authClient;
 let identity;
 let actor;
+let balanceInterval;
 
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
@@ -14,8 +15,8 @@ const mainSection = document.getElementById("mainSection");
 const loader = document.getElementById("loader");
 const balanceElement = document.getElementById("balance");
 const withdrawButton = document.getElementById("withdrawButton");
-const delegatedIdInput = document.getElementById("delegatedId");
-const copyDelegatedIdButton = document.getElementById("copyDelegatedId");
+const principalIdInput = document.getElementById("principalId");
+const copyPrincipalIdButton = document.getElementById("copyPrincipalId");
 
 async function init() {
     authClient = await AuthClient.create();
@@ -39,21 +40,23 @@ async function handleAuthenticated() {
         },
     });
 
-    // Display delegated identity
-    delegatedIdInput.value = principal.toString();
+    // Display principal
+    principalIdInput.value = principal.toString();
     
+    // Initial balance update
     await updateBalance();
+    
+    // Start balance polling
+    balanceInterval = setInterval(updateBalance, 5000);
 }
 
 async function updateBalance() {
-    showLoader();
     try {
         const balance = await actor.getBalance();
         balanceElement.textContent = `${balance} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);
     }
-    hideLoader();
 }
 
 loginButton.addEventListener("click", async () => {
@@ -64,6 +67,9 @@ loginButton.addEventListener("click", async () => {
 });
 
 logoutButton.addEventListener("click", async () => {
+    if (balanceInterval) {
+        clearInterval(balanceInterval);
+    }
     await authClient.logout();
     mainSection.classList.add("d-none");
     loginSection.classList.remove("d-none");
@@ -99,10 +105,10 @@ withdrawButton.addEventListener("click", async () => {
     hideLoader();
 });
 
-copyDelegatedIdButton.addEventListener("click", async () => {
+copyPrincipalIdButton.addEventListener("click", async () => {
     try {
-        await navigator.clipboard.writeText(delegatedIdInput.value);
-        alert("Delegated Identity copied to clipboard!");
+        await navigator.clipboard.writeText(principalIdInput.value);
+        alert("Principal ID copied to clipboard!");
     } catch (err) {
         console.error("Failed to copy text: ", err);
     }
