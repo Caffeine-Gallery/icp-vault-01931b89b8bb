@@ -1,4 +1,5 @@
 import Array "mo:base/Array";
+import Blob "mo:base/Blob";
 import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
@@ -14,7 +15,6 @@ import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 
 actor class TokenDApp() {
-    // ckSepoliaUSDC token canister interface
     type Token = actor {
         icrc1_balance_of : shared query { owner : Principal; subaccount : ?[Nat8] } -> async Nat;
         icrc1_transfer : shared {
@@ -32,39 +32,17 @@ actor class TokenDApp() {
     stable var balanceEntries : [(Principal, Nat)] = [];
     var balances = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
 
-    public shared({ caller }) func deposit(amount : Nat) : async Result.Result<(), Text> {
+    public query({ caller }) func getPrincipal() : async Principal {
         if (Principal.isAnonymous(caller)) {
-            return #err("Anonymous principal not allowed");
+            throw Error.reject("Anonymous principal not allowed");
         };
+        derivePrincipal(caller)
+    };
 
-        try {
-            let currentBalance = await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null });
-            if (currentBalance < amount) {
-                return #err("Insufficient balance");
-            };
-
-            let result = await ckSepoliaUSDC_canister.icrc1_transfer({
-                to = { owner = Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai"); subaccount = null };
-                amount = amount;
-                fee = null;
-                memo = null;
-                from_subaccount = null;
-                created_at_time = null;
-            });
-
-            switch(result) {
-                case ({ Ok = _ }) {
-                    let oldBalance = Option.get(balances.get(caller), 0);
-                    balances.put(caller, oldBalance + amount);
-                    #ok(());
-                };
-                case ({ Err = e }) {
-                    #err(e);
-                };
-            };
-        } catch (e) {
-            #err("Transfer failed: " # Error.message(e));
-        };
+    private func derivePrincipal(caller : Principal) : Principal {
+        // This ensures a unique principal per user while maintaining consistency
+        let seed = Principal.toBlob(caller);
+        Principal.fromBlob(seed)
     };
 
     public shared({ caller }) func withdraw(to : Principal, amount : Nat) : async Result.Result<(), Text> {
@@ -72,7 +50,9 @@ actor class TokenDApp() {
             return #err("Anonymous principal not allowed");
         };
 
-        let balance = Option.get(balances.get(caller), 0);
+        let userPrincipal = derivePrincipal(caller);
+        let balance = Option.get(balances.get(userPrincipal), 0);
+        
         if (balance < amount) {
             return #err("Insufficient balance");
         };
@@ -89,7 +69,7 @@ actor class TokenDApp() {
 
             switch(result) {
                 case ({ Ok = _ }) {
-                    balances.put(caller, balance - amount);
+                    balances.put(userPrincipal, balance - amount);
                     #ok(());
                 };
                 case ({ Err = e }) {
@@ -102,7 +82,11 @@ actor class TokenDApp() {
     };
 
     public query({ caller }) func getBalance() : async Nat {
-        Option.get(balances.get(caller), 0);
+        if (Principal.isAnonymous(caller)) {
+            return 0;
+        };
+        let userPrincipal = derivePrincipal(caller);
+        Option.get(balances.get(userPrincipal), 0)
     };
 
     system func preupgrade() {

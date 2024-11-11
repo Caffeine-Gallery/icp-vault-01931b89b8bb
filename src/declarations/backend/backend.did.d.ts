@@ -5,8 +5,8 @@ import type { IDL } from '@dfinity/candid';
 export type Result = { 'ok' : null } |
   { 'err' : string };
 export interface TokenDApp {
-  'deposit' : ActorMethod<[bigint], Result>,
   'getBalance' : ActorMethod<[], bigint>,
+  'getPrincipal' : ActorMethod<[], Principal>,
   'withdraw' : ActorMethod<[Principal, bigint], Result>,
 }
 export interface _SERVICE extends TokenDApp {}

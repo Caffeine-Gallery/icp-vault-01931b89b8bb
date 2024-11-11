@@ -1,7 +1,7 @@
 type TokenDApp = 
  service {
-   deposit: (nat) -> (Result);
    getBalance: () -> (nat) query;
+   getPrincipal: () -> (principal) query;
    withdraw: (principal, nat) -> (Result);
  };
 type Result = 

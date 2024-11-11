@@ -31,7 +31,6 @@ async function handleAuthenticated() {
     mainSection.classList.remove("d-none");
     
     identity = await authClient.getIdentity();
-    const principal = identity.getPrincipal();
     
     // Create actor with identity
     actor = createActor(process.env.CANISTER_ID_BACKEND, {
@@ -40,8 +39,14 @@ async function handleAuthenticated() {
         },
     });
 
-    // Display principal
-    principalIdInput.value = principal.toString();
+    try {
+        // Get derived principal from backend
+        const derivedPrincipal = await actor.getPrincipal();
+        principalIdInput.value = derivedPrincipal.toString();
+    } catch (e) {
+        console.error("Failed to get derived principal:", e);
+        alert("Failed to get your principal ID");
+    }
     
     // Initial balance update
     await updateBalance();
