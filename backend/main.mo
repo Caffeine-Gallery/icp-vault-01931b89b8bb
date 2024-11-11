@@ -1,5 +1,4 @@
 import Array "mo:base/Array";
-import Blob "mo:base/Blob";
 import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
@@ -32,27 +31,12 @@ actor class TokenDApp() {
     stable var balanceEntries : [(Principal, Nat)] = [];
     var balances = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
 
-    public query({ caller }) func getPrincipal() : async Principal {
-        if (Principal.isAnonymous(caller)) {
-            throw Error.reject("Anonymous principal not allowed");
-        };
-        derivePrincipal(caller)
-    };
-
-    private func derivePrincipal(caller : Principal) : Principal {
-        // This ensures a unique principal per user while maintaining consistency
-        let seed = Principal.toBlob(caller);
-        Principal.fromBlob(seed)
-    };
-
     public shared({ caller }) func withdraw(to : Principal, amount : Nat) : async Result.Result<(), Text> {
         if (Principal.isAnonymous(caller)) {
             return #err("Anonymous principal not allowed");
         };
 
-        let userPrincipal = derivePrincipal(caller);
-        let balance = Option.get(balances.get(userPrincipal), 0);
-        
+        let balance = Option.get(balances.get(caller), 0);
         if (balance < amount) {
             return #err("Insufficient balance");
         };
@@ -69,7 +53,7 @@ actor class TokenDApp() {
 
             switch(result) {
                 case ({ Ok = _ }) {
-                    balances.put(userPrincipal, balance - amount);
+                    balances.put(caller, balance - amount);
                     #ok(());
                 };
                 case ({ Err = e }) {
@@ -85,8 +69,7 @@ actor class TokenDApp() {
         if (Principal.isAnonymous(caller)) {
             return 0;
         };
-        let userPrincipal = derivePrincipal(caller);
-        Option.get(balances.get(userPrincipal), 0)
+        Option.get(balances.get(caller), 0)
     };
 
     system func preupgrade() {

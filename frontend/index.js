@@ -31,6 +31,10 @@ async function handleAuthenticated() {
     mainSection.classList.remove("d-none");
     
     identity = await authClient.getIdentity();
+    const principal = identity.getPrincipal();
+    
+    // Display the user's principal
+    principalIdInput.value = principal.toString();
     
     // Create actor with identity
     actor = createActor(process.env.CANISTER_ID_BACKEND, {
@@ -38,15 +42,6 @@ async function handleAuthenticated() {
             identity,
         },
     });
-
-    try {
-        // Get derived principal from backend
-        const derivedPrincipal = await actor.getPrincipal();
-        principalIdInput.value = derivedPrincipal.toString();
-    } catch (e) {
-        console.error("Failed to get derived principal:", e);
-        alert("Failed to get your principal ID");
-    }
     
     // Initial balance update
     await updateBalance();
@@ -65,10 +60,17 @@ async function updateBalance() {
 }
 
 loginButton.addEventListener("click", async () => {
-    await authClient.login({
-        identityProvider: process.env.II_URL || "https://identity.ic0.app",
-        onSuccess: handleAuthenticated,
-    });
+    showLoader();
+    try {
+        await authClient.login({
+            identityProvider: process.env.II_URL || "https://identity.ic0.app",
+            onSuccess: handleAuthenticated,
+        });
+    } catch (e) {
+        console.error("Login failed:", e);
+        alert("Failed to login. Please try again.");
+    }
+    hideLoader();
 });
 
 logoutButton.addEventListener("click", async () => {
@@ -78,6 +80,7 @@ logoutButton.addEventListener("click", async () => {
     await authClient.logout();
     mainSection.classList.add("d-none");
     loginSection.classList.remove("d-none");
+    principalIdInput.value = "";
 });
 
 withdrawButton.addEventListener("click", async () => {
