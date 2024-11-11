@@ -1,15 +1,10 @@
-import Array "mo:base/Array";
-import Hash "mo:base/Hash";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
 import Text "mo:base/Text";
 
 import Principal "mo:base/Principal";
-import HashMap "mo:base/HashMap";
 import Error "mo:base/Error";
-import Iter "mo:base/Iter";
-import Option "mo:base/Option";
 import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 
@@ -26,17 +21,14 @@ actor class TokenDApp() {
         } -> async { Ok : Nat; Err : Text };
     };
 
-    let ckSepoliaUSDC_canister : Token = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
-
-    stable var balanceEntries : [(Principal, Nat)] = [];
-    var balances = HashMap.HashMap<Principal, Nat>(0, Principal.equal, Principal.hash);
+    let ckSepoliaUSDC_canister : Token = actor("yfumr-cyaaa-aaaar-qaela-cai");
 
     public shared({ caller }) func withdraw(to : Principal, amount : Nat) : async Result.Result<(), Text> {
         if (Principal.isAnonymous(caller)) {
             return #err("Anonymous principal not allowed");
         };
 
-        let balance = Option.get(balances.get(caller), 0);
+        let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null });
         if (balance < amount) {
             return #err("Insufficient balance");
         };
@@ -53,7 +45,6 @@ actor class TokenDApp() {
 
             switch(result) {
                 case ({ Ok = _ }) {
-                    balances.put(caller, balance - amount);
                     #ok(());
                 };
                 case ({ Err = e }) {
@@ -65,19 +56,16 @@ actor class TokenDApp() {
         };
     };
 
-    public query({ caller }) func getBalance() : async Nat {
+    public shared({ caller }) func getBalance() : async Nat {
         if (Principal.isAnonymous(caller)) {
             return 0;
         };
-        Option.get(balances.get(caller), 0)
-    };
-
-    system func preupgrade() {
-        balanceEntries := Iter.toArray(balances.entries());
-    };
-
-    system func postupgrade() {
-        balances := HashMap.fromIter<Principal, Nat>(balanceEntries.vals(), 0, Principal.equal, Principal.hash);
-        balanceEntries := [];
+        
+        try {
+            await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null })
+        } catch (e) {
+            Debug.print("Failed to get balance: " # Error.message(e));
+            0
+        }
     };
 }

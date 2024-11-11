@@ -47,13 +47,17 @@ async function handleAuthenticated() {
     await updateBalance();
     
     // Start balance polling
+    if (balanceInterval) {
+        clearInterval(balanceInterval);
+    }
     balanceInterval = setInterval(updateBalance, 5000);
 }
 
 async function updateBalance() {
     try {
         const balance = await actor.getBalance();
-        balanceElement.textContent = `${balance} ckSepoliaUSDC`;
+        const formattedBalance = Number(balance) / 1_000_000; // Convert to USDC units (6 decimals)
+        balanceElement.textContent = `${formattedBalance.toFixed(6)} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);
     }
@@ -84,14 +88,15 @@ logoutButton.addEventListener("click", async () => {
 });
 
 withdrawButton.addEventListener("click", async () => {
-    const amount = BigInt(document.getElementById("withdrawAmount").value);
-    const recipientPrincipal = document.getElementById("recipientPrincipal").value;
-    
-    if (amount <= 0) {
+    const amountInput = document.getElementById("withdrawAmount").value;
+    if (!amountInput || parseFloat(amountInput) <= 0) {
         alert("Please enter a valid amount");
         return;
     }
 
+    const amount = BigInt(Math.floor(parseFloat(amountInput) * 1_000_000)); // Convert to token units
+    const recipientPrincipal = document.getElementById("recipientPrincipal").value;
+    
     if (!recipientPrincipal) {
         alert("Please enter a recipient principal");
         return;
