@@ -46,13 +46,11 @@ async function initActors(identity) {
             });
         }
 
-        // Create backend actor with authenticated identity
         actor = Actor.createActor(backendIdlFactory, {
             agent,
             canisterId: backendCanisterId,
         });
         
-        // Initialize USDC actor with authenticated identity
         usdcActor = Actor.createActor(usdcIdlFactory, {
             agent,
             canisterId: USDC_CANISTER_ID,
@@ -196,7 +194,7 @@ logoutButton.addEventListener("click", async () => {
 });
 
 withdrawButton.addEventListener("click", async () => {
-    if (!actor || !identity) {
+    if (!usdcActor || !identity) {
         alert("Please log in first");
         return;
     }
@@ -223,7 +221,7 @@ withdrawButton.addEventListener("click", async () => {
 
     showLoader();
     try {
-        console.log("Initiating withdrawal:", {
+        console.log("Initiating transfer:", {
             amount: amount.toString(),
             recipient: recipientPrincipal,
             fee: currentFee.toString(),
@@ -232,17 +230,28 @@ withdrawButton.addEventListener("click", async () => {
         });
 
         const recipient = Principal.fromText(recipientPrincipal);
-        const result = await actor.withdraw(recipient, amount);
-        console.log("Withdrawal result:", result);
+        const result = await usdcActor.icrc1_transfer({
+            to: {
+                owner: recipient,
+                subaccount: []
+            },
+            amount: amount,
+            fee: [currentFee],
+            memo: [],
+            from_subaccount: [],
+            created_at_time: []
+        });
 
-        if ('ok' in result) {
-            alert("Withdrawal successful!");
+        console.log("Transfer result:", result);
+
+        if ('Ok' in result) {
+            alert("Transfer successful!");
             await updateBalance();
         } else {
-            alert(`Withdrawal failed: ${result.err}`);
+            alert(`Transfer failed: ${result.Err}`);
         }
     } catch (e) {
-        console.error("Withdrawal error:", e);
+        console.error("Transfer error:", e);
         alert(`Error: ${e.message}`);
     }
     hideLoader();
