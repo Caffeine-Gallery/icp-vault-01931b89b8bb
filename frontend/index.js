@@ -94,7 +94,7 @@ async function handleAuthenticated() {
         feeInterval = setInterval(async () => {
             await actor.updateFee();
             await updateFee();
-        }, 300000); // Update fee every 5 minutes
+        }, 300000);
     } catch (e) {
         console.error("Failed during authentication:", e);
         alert("Failed to initialize the application. Please try logging in again.");
@@ -202,8 +202,17 @@ withdrawButton.addEventListener("click", async () => {
 
     showLoader();
     try {
+        console.log("Initiating withdrawal:", {
+            amount: amount.toString(),
+            recipient: recipientPrincipal,
+            fee: currentFee.toString(),
+            balance: currentBalance.toString()
+        });
+
         const recipient = Principal.fromText(recipientPrincipal);
         const result = await actor.withdraw(recipient, amount);
+        console.log("Withdrawal result:", result);
+
         if ('ok' in result) {
             alert("Withdrawal successful!");
             await updateBalance();
@@ -211,6 +220,7 @@ withdrawButton.addEventListener("click", async () => {
             alert(`Withdrawal failed: ${result.err}`);
         }
     } catch (e) {
+        console.error("Withdrawal error:", e);
         alert(`Error: ${e.message}`);
     }
     hideLoader();
