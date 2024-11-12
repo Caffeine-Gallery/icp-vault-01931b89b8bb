@@ -1,4 +1,10 @@
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
 service : {
   getFee: () -> (nat) query;
-  updateFee: () -> ();
+  updateFee: () -> (Result);
+  whoami: () -> (principal);
 }
