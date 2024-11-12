@@ -1,5 +1,6 @@
 import Nat8 "mo:base/Nat8";
 import Nat64 "mo:base/Nat64";
+import Stack "mo:base/Stack";
 import Text "mo:base/Text";
 
 import Principal "mo:base/Principal";
@@ -29,9 +30,10 @@ actor class TokenDApp() {
         icrc1_fee : shared query () -> async Nat;
     };
 
-    let ckSepoliaUSDC_canister : Token = actor("yfumr-cyaaa-aaaar-qaela-cai");
+    let ckSepoliaUSDC_canister : Token = actor("24ago-6iaaa-aaaab-qaj3q-cai");
 
     public shared func updateFee() : async () {
+        Debug.print("Updating fee from canister: 24ago-6iaaa-aaaab-qaj3q-cai");
         cachedFee := await ckSepoliaUSDC_canister.icrc1_fee();
         Debug.print("Fee updated to: " # debug_show(cachedFee));
     };
@@ -40,6 +42,7 @@ actor class TokenDApp() {
         Debug.print("Withdraw request from: " # debug_show(caller));
         Debug.print("To: " # debug_show(to));
         Debug.print("Amount: " # debug_show(amount));
+        Debug.print("Using token canister: 24ago-6iaaa-aaaab-qaj3q-cai");
         
         if (Principal.isAnonymous(caller)) {
             Debug.print("Error: Anonymous principal not allowed");
@@ -51,20 +54,26 @@ actor class TokenDApp() {
             return #err("Amount cannot be zero");
         };
 
-        let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({
-            owner = caller;
-            subaccount = null;
-        });
-        Debug.print("Current balance: " # debug_show(balance));
-        Debug.print("Current fee: " # debug_show(cachedFee));
-
-        if (balance < (amount + cachedFee)) {
-            Debug.print("Error: Insufficient balance including fee");
-            return #err("Insufficient balance including fee. Required: " # Nat.toText(amount + cachedFee) # ", Available: " # Nat.toText(balance));
-        };
-
         try {
+            let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({
+                owner = caller;
+                subaccount = null;
+            });
+            Debug.print("Current balance: " # debug_show(balance));
+            Debug.print("Current fee: " # debug_show(cachedFee));
+
+            if (balance < (amount + cachedFee)) {
+                Debug.print("Error: Insufficient balance including fee");
+                return #err("Insufficient balance including fee. Required: " # Nat.toText(amount + cachedFee) # ", Available: " # Nat.toText(balance));
+            };
+
             Debug.print("Initiating transfer...");
+            Debug.print("Transfer parameters:");
+            Debug.print("From: " # debug_show(caller));
+            Debug.print("To: " # debug_show(to));
+            Debug.print("Amount: " # debug_show(amount));
+            Debug.print("Fee: " # debug_show(cachedFee));
+
             let result = await ckSepoliaUSDC_canister.icrc1_transfer({
                 to = {
                     owner = to;
@@ -88,12 +97,17 @@ actor class TokenDApp() {
                 };
             };
         } catch (e) {
-            Debug.print("Transfer failed with exception: " # Error.message(e));
-            #err("Transfer failed: " # Error.message(e));
+            let errorMsg = Error.message(e);
+            Debug.print("Transfer failed with exception: " # errorMsg);
+            Debug.print("Stack trace: " # Error.message(e));
+            #err("Transfer failed: " # errorMsg);
         };
     };
 
     public shared({ caller }) func getBalance() : async Nat {
+        Debug.print("Getting balance for: " # debug_show(caller));
+        Debug.print("Using token canister: 24ago-6iaaa-aaaab-qaj3q-cai");
+        
         if (Principal.isAnonymous(caller)) {
             Debug.print("Anonymous principal attempted to get balance");
             return 0;
@@ -108,6 +122,7 @@ actor class TokenDApp() {
             balance
         } catch (e) {
             Debug.print("Failed to get balance: " # Error.message(e));
+            Debug.print("Stack trace: " # Error.message(e));
             0
         }
     };
