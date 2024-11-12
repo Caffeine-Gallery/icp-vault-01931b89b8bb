@@ -1,8 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
-import { HttpAgent } from "@dfinity/agent";
-import { backend } from "declarations/backend";
+import { HttpAgent, Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { idlFactory } from "declarations/backend/backend.did.js";
+import { canisterId, idlFactory } from "declarations/backend";
 
 let authClient;
 let identity;
@@ -23,41 +22,56 @@ const isLocalhost = window.location.hostname === "localhost" || window.location.
 const host = isLocalhost ? "http://localhost:4943" : "https://icp0.io";
 
 async function initActor(identity) {
-    const agent = new HttpAgent({
-        identity,
-        host: host,
-    });
+    try {
+        const agent = new HttpAgent({
+            identity,
+            host: host,
+        });
 
-    // Only perform fetch root key when in local development
-    if (isLocalhost) {
-        await agent.fetchRootKey();
+        if (isLocalhost) {
+            await agent.fetchRootKey().catch(err => {
+                console.warn("Unable to fetch root key. Check to ensure that your local replica is running");
+                console.error(err);
+            });
+        }
+
+        if (!canisterId) {
+            throw new Error("Canister ID not found. Make sure the backend canister is deployed.");
+        }
+
+        return Actor.createActor(idlFactory, {
+            agent,
+            canisterId,
+        });
+    } catch (e) {
+        console.error("Failed to initialize actor:", e);
+        throw e;
     }
-
-    return Actor.createActor(idlFactory, {
-        agent,
-        canisterId: process.env.CANISTER_ID_BACKEND,
-    });
 }
 
 async function init() {
-    authClient = await AuthClient.create();
-    if (await authClient.isAuthenticated()) {
-        identity = await authClient.getIdentity();
-        await handleAuthenticated();
+    try {
+        authClient = await AuthClient.create();
+        if (await authClient.isAuthenticated()) {
+            identity = await authClient.getIdentity();
+            await handleAuthenticated();
+        }
+    } catch (e) {
+        console.error("Failed to initialize application:", e);
     }
 }
 
 async function handleAuthenticated() {
-    loginSection.classList.add("d-none");
-    mainSection.classList.remove("d-none");
-    
-    identity = await authClient.getIdentity();
-    const principal = identity.getPrincipal();
-    console.log("Authenticated with principal:", principal.toString());
-    
-    principalIdInput.value = principal.toString();
-    
     try {
+        loginSection.classList.add("d-none");
+        mainSection.classList.remove("d-none");
+        
+        identity = await authClient.getIdentity();
+        const principal = identity.getPrincipal();
+        console.log("Authenticated with principal:", principal.toString());
+        
+        principalIdInput.value = principal.toString();
+        
         actor = await initActor(identity);
         await updateBalance();
         
@@ -66,7 +80,10 @@ async function handleAuthenticated() {
         }
         balanceInterval = setInterval(updateBalance, 5000);
     } catch (e) {
-        console.error("Failed to initialize actor:", e);
+        console.error("Failed during authentication:", e);
+        alert("Failed to initialize the application. Please try logging in again.");
+        await authClient.logout();
+        location.reload();
     }
 }
 
@@ -81,6 +98,11 @@ function formatBalance(rawBalance) {
 }
 
 async function updateBalance() {
+    if (!actor) {
+        console.warn("Actor not initialized, skipping balance update");
+        return;
+    }
+
     try {
         const balance = await actor.getBalance();
         console.log("Retrieved balance:", balance.toString());
@@ -109,12 +131,18 @@ logoutButton.addEventListener("click", async () => {
         clearInterval(balanceInterval);
     }
     await authClient.logout();
+    actor = null;
     mainSection.classList.add("d-none");
     loginSection.classList.remove("d-none");
     principalIdInput.value = "";
 });
 
 withdrawButton.addEventListener("click", async () => {
+    if (!actor) {
+        alert("Please log in first");
+        return;
+    }
+
     const amountInput = document.getElementById("withdrawAmount").value;
     if (!amountInput || parseFloat(amountInput) <= 0) {
         alert("Please enter a valid amount");
