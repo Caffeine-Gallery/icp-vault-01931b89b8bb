@@ -1,8 +1,8 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { backend } from "declarations/backend";
-import { idlFactory } from "./usdc.did.js";
+import { idlFactory as backendIdlFactory } from "declarations/backend";
+import { idlFactory as usdcIdlFactory } from "./usdc.did.js";
 
 let authClient;
 let identity;
@@ -14,6 +14,7 @@ let currentBalance = 0n;
 let currentFee = 0n;
 
 const USDC_CANISTER_ID = "yfumr-cyaaa-aaaar-qaela-cai";
+const BACKEND_CANISTER_ID = process.env.CANISTER_ID_BACKEND;
 
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
@@ -45,10 +46,14 @@ async function initActors(identity) {
             });
         }
 
-        actor = backend;
+        // Create backend actor with authenticated identity
+        actor = Actor.createActor(backendIdlFactory, {
+            agent,
+            canisterId: BACKEND_CANISTER_ID,
+        });
         
-        // Initialize USDC actor
-        usdcActor = Actor.createActor(idlFactory, {
+        // Initialize USDC actor with authenticated identity
+        usdcActor = Actor.createActor(usdcIdlFactory, {
             agent,
             canisterId: USDC_CANISTER_ID,
         });
@@ -87,7 +92,7 @@ async function handleAuthenticated() {
         actor = actors.actor;
         usdcActor = actors.usdcActor;
         
-        console.log("Actors initialized");
+        console.log("Actors initialized with identity:", principal.toString());
         
         await actor.updateFee();
         await updateBalance();
@@ -123,8 +128,8 @@ function formatBalance(rawBalance) {
 }
 
 async function updateBalance() {
-    if (!usdcActor) {
-        console.warn("USDC Actor not initialized, skipping balance update");
+    if (!usdcActor || !identity) {
+        console.warn("USDC Actor or identity not initialized, skipping balance update");
         return;
     }
 
@@ -184,13 +189,14 @@ logoutButton.addEventListener("click", async () => {
     await authClient.logout();
     actor = null;
     usdcActor = null;
+    identity = null;
     mainSection.classList.add("d-none");
     loginSection.classList.remove("d-none");
     principalIdInput.value = "";
 });
 
 withdrawButton.addEventListener("click", async () => {
-    if (!actor) {
+    if (!actor || !identity) {
         alert("Please log in first");
         return;
     }
@@ -221,7 +227,8 @@ withdrawButton.addEventListener("click", async () => {
             amount: amount.toString(),
             recipient: recipientPrincipal,
             fee: currentFee.toString(),
-            balance: currentBalance.toString()
+            balance: currentBalance.toString(),
+            caller: identity.getPrincipal().toString()
         });
 
         const recipient = Principal.fromText(recipientPrincipal);
