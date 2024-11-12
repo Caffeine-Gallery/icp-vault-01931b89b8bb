@@ -9,6 +9,8 @@ import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 
 actor class TokenDApp() {
+    stable var cachedFee : Nat = 0;
+
     type Account = {
         owner : Principal;
         subaccount : ?[Nat8];
@@ -24,9 +26,14 @@ actor class TokenDApp() {
             from_subaccount : ?[Nat8];
             created_at_time : ?Nat64;
         } -> async { Ok : Nat; Err : Text };
+        icrc1_fee : shared query () -> async Nat;
     };
 
     let ckSepoliaUSDC_canister : Token = actor("yfumr-cyaaa-aaaar-qaela-cai");
+
+    public shared func updateFee() : async () {
+        cachedFee := await ckSepoliaUSDC_canister.icrc1_fee();
+    };
 
     public shared({ caller }) func withdraw(to : Principal, amount : Nat) : async Result.Result<(), Text> {
         if (Principal.isAnonymous(caller)) {
@@ -38,10 +45,8 @@ actor class TokenDApp() {
             subaccount = null;
         });
 
-        Debug.print("Current balance for " # Principal.toText(caller) # ": " # debug_show(balance));
-
-        if (balance < amount) {
-            return #err("Insufficient balance");
+        if (balance < (amount + cachedFee)) {
+            return #err("Insufficient balance including fee");
         };
 
         try {
@@ -51,19 +56,15 @@ actor class TokenDApp() {
                     subaccount = null;
                 };
                 amount = amount;
-                fee = null;
+                fee = ?cachedFee;
                 memo = null;
                 from_subaccount = null;
                 created_at_time = null;
             });
 
             switch(result) {
-                case ({ Ok = _ }) {
-                    #ok(());
-                };
-                case ({ Err = e }) {
-                    #err(e);
-                };
+                case ({ Ok = _ }) { #ok(()); };
+                case ({ Err = e }) { #err(e); };
             };
         } catch (e) {
             #err("Transfer failed: " # Error.message(e));
@@ -75,18 +76,18 @@ actor class TokenDApp() {
             return 0;
         };
         
-        Debug.print("Checking balance for principal: " # Principal.toText(caller));
-        
         try {
-            let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({
+            await ckSepoliaUSDC_canister.icrc1_balance_of({
                 owner = caller;
                 subaccount = null;
             });
-            Debug.print("Balance retrieved: " # debug_show(balance));
-            balance
         } catch (e) {
             Debug.print("Failed to get balance: " # Error.message(e));
             0
         }
+    };
+
+    public query func getFee() : async Nat {
+        cachedFee
     };
 }

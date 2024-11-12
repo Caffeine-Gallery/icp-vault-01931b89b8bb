@@ -6,6 +6,8 @@ export type Result = { 'ok' : null } |
   { 'err' : string };
 export interface TokenDApp {
   'getBalance' : ActorMethod<[], bigint>,
+  'getFee' : ActorMethod<[], bigint>,
+  'updateFee' : ActorMethod<[], undefined>,
   'withdraw' : ActorMethod<[Principal, bigint], Result>,
 }
 export interface _SERVICE extends TokenDApp {}

@@ -3,64 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ckSepoliaUSDC DApp</title>
+    <title>Token DApp</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="index.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center mt-5">
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-body">
-                        <h2 class="card-title text-center mb-4">ckSepoliaUSDC DApp</h2>
-                        
-                        <div id="loginSection" class="text-center">
-                            <button id="loginButton" class="btn btn-primary">Login with Internet Identity</button>
-                        </div>
+    <div class="container mt-5">
+        <div id="loginSection">
+            <button id="loginButton" class="btn btn-primary">Login with Internet Identity</button>
+        </div>
 
-                        <div id="mainSection" class="d-none">
-                            <div class="mb-4">
-                                <h5>Your Principal ID</h5>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="principalId" readonly>
-                                    <button class="btn btn-outline-secondary" type="button" id="copyPrincipalId">
-                                        Copy
-                                    </button>
-                                </div>
-                                <div class="alert alert-info mt-2">
-                                    <small>
-                                        To deposit ckSepoliaUSDC, send tokens to this principal using the OISY wallet. 
-                                        Your balance will automatically update every 5 seconds.
-                                    </small>
-                                </div>
-                            </div>
-
-                            <div class="mb-4 text-center">
-                                <h4>Your Balance</h4>
-                                <p id="balance" class="h2">0 ckSepoliaUSDC</p>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="withdrawAmount" class="form-label">Withdraw Amount</label>
-                                <input type="number" class="form-control" id="withdrawAmount" min="0">
-                                <input type="text" class="form-control mt-2" id="recipientPrincipal" placeholder="Recipient Principal ID">
-                                <button id="withdrawButton" class="btn btn-warning w-100 mt-2">Withdraw</button>
-                            </div>
-
-                            <button id="logoutButton" class="btn btn-outline-danger w-100 mt-3">Logout</button>
-                        </div>
-
-                        <div id="loader" class="text-center d-none">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
+        <div id="mainSection" class="d-none">
+            <div class="mb-4">
+                <h3>Your Principal ID:</h3>
+                <div class="input-group">
+                    <input type="text" id="principalId" class="form-control" readonly>
+                    <button id="copyPrincipalId" class="btn btn-secondary">Copy</button>
                 </div>
             </div>
+
+            <div class="mb-4">
+                <h3>Your Balance:</h3>
+                <p id="balance">Loading...</p>
+            </div>
+
+            <div class="mb-4">
+                <h3>Withdraw</h3>
+                <p id="feeInfo" class="text-muted">Loading fee information...</p>
+                <div class="mb-3">
+                    <label for="withdrawAmount" class="form-label">Amount:</label>
+                    <div class="input-group">
+                        <input type="number" id="withdrawAmount" class="form-control" step="0.000001" min="0">
+                        <button id="maxAmount" class="btn btn-secondary">Max</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="recipientPrincipal" class="form-label">Recipient Principal:</label>
+                    <input type="text" id="recipientPrincipal" class="form-control">
+                </div>
+                <button id="withdrawButton" class="btn btn-primary">Withdraw</button>
+            </div>
+
+            <button id="logoutButton" class="btn btn-danger">Logout</button>
         </div>
     </div>
+
+    <div id="loader" class="loader-overlay d-none">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
     <script type="module" src="index.js"></script>
 </body>
 </html>

@@ -2,6 +2,8 @@ export const idlFactory = ({ IDL }) => {
   const Result = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   const TokenDApp = IDL.Service({
     'getBalance' : IDL.Func([], [IDL.Nat], []),
+    'getFee' : IDL.Func([], [IDL.Nat], ['query']),
+    'updateFee' : IDL.Func([], [], []),
     'withdraw' : IDL.Func([IDL.Principal, IDL.Nat], [Result], []),
   });
   return TokenDApp;

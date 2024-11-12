@@ -7,6 +7,9 @@ let authClient;
 let identity;
 let actor;
 let balanceInterval;
+let feeInterval;
+let currentBalance = 0n;
+let currentFee = 0n;
 
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
@@ -17,6 +20,9 @@ const balanceElement = document.getElementById("balance");
 const withdrawButton = document.getElementById("withdrawButton");
 const principalIdInput = document.getElementById("principalId");
 const copyPrincipalIdButton = document.getElementById("copyPrincipalId");
+const maxAmountButton = document.getElementById("maxAmount");
+const feeInfoElement = document.getElementById("feeInfo");
+const withdrawAmountInput = document.getElementById("withdrawAmount");
 
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const host = isLocalhost ? "http://localhost:4943" : "https://icp0.io";
@@ -73,12 +79,22 @@ async function handleAuthenticated() {
         principalIdInput.value = principal.toString();
         
         actor = await initActor(identity);
+        await actor.updateFee();
         await updateBalance();
+        await updateFee();
         
         if (balanceInterval) {
             clearInterval(balanceInterval);
         }
         balanceInterval = setInterval(updateBalance, 5000);
+
+        if (feeInterval) {
+            clearInterval(feeInterval);
+        }
+        feeInterval = setInterval(async () => {
+            await actor.updateFee();
+            await updateFee();
+        }, 300000); // Update fee every 5 minutes
     } catch (e) {
         console.error("Failed during authentication:", e);
         alert("Failed to initialize the application. Please try logging in again.");
@@ -90,7 +106,6 @@ async function handleAuthenticated() {
 function formatBalance(rawBalance) {
     const decimals = 6;
     const balance = Number(rawBalance) / Math.pow(10, decimals);
-    console.log("Raw balance:", rawBalance.toString(), "Formatted balance:", balance);
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
@@ -104,13 +119,32 @@ async function updateBalance() {
     }
 
     try {
-        const balance = await actor.getBalance();
-        console.log("Retrieved balance:", balance.toString());
-        balanceElement.textContent = `${formatBalance(balance)} ckSepoliaUSDC`;
+        currentBalance = await actor.getBalance();
+        balanceElement.textContent = `${formatBalance(currentBalance)} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);
     }
 }
+
+async function updateFee() {
+    if (!actor) return;
+    try {
+        currentFee = await actor.getFee();
+        feeInfoElement.textContent = `Transaction fee: ${formatBalance(currentFee)} ckSepoliaUSDC`;
+    } catch (e) {
+        console.error("Failed to get fee:", e);
+        feeInfoElement.textContent = "Failed to load fee information";
+    }
+}
+
+maxAmountButton.addEventListener("click", () => {
+    if (currentBalance > currentFee) {
+        const maxAmount = Number(currentBalance - currentFee) / Math.pow(10, 6);
+        withdrawAmountInput.value = maxAmount.toFixed(6);
+    } else {
+        alert("Insufficient balance to cover the fee");
+    }
+});
 
 loginButton.addEventListener("click", async () => {
     showLoader();
@@ -130,6 +164,9 @@ logoutButton.addEventListener("click", async () => {
     if (balanceInterval) {
         clearInterval(balanceInterval);
     }
+    if (feeInterval) {
+        clearInterval(feeInterval);
+    }
     await authClient.logout();
     actor = null;
     mainSection.classList.add("d-none");
@@ -143,7 +180,7 @@ withdrawButton.addEventListener("click", async () => {
         return;
     }
 
-    const amountInput = document.getElementById("withdrawAmount").value;
+    const amountInput = withdrawAmountInput.value;
     if (!amountInput || parseFloat(amountInput) <= 0) {
         alert("Please enter a valid amount");
         return;
@@ -155,6 +192,11 @@ withdrawButton.addEventListener("click", async () => {
     
     if (!recipientPrincipal) {
         alert("Please enter a recipient principal");
+        return;
+    }
+
+    if (amount + currentFee > currentBalance) {
+        alert("Insufficient balance including fee");
         return;
     }
 
