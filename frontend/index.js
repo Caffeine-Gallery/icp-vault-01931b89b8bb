@@ -1,7 +1,8 @@
 import { AuthClient } from "@dfinity/auth-client";
+import { HttpAgent } from "@dfinity/agent";
 import { backend } from "declarations/backend";
 import { Principal } from "@dfinity/principal";
-import { createActor } from "declarations/backend";
+import { idlFactory } from "declarations/backend/backend.did.js";
 
 let authClient;
 let identity;
@@ -17,6 +18,26 @@ const balanceElement = document.getElementById("balance");
 const withdrawButton = document.getElementById("withdrawButton");
 const principalIdInput = document.getElementById("principalId");
 const copyPrincipalIdButton = document.getElementById("copyPrincipalId");
+
+const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const host = isLocalhost ? "http://localhost:4943" : "https://icp0.io";
+
+async function initActor(identity) {
+    const agent = new HttpAgent({
+        identity,
+        host: host,
+    });
+
+    // Only perform fetch root key when in local development
+    if (isLocalhost) {
+        await agent.fetchRootKey();
+    }
+
+    return Actor.createActor(idlFactory, {
+        agent,
+        canisterId: process.env.CANISTER_ID_BACKEND,
+    });
+}
 
 async function init() {
     authClient = await AuthClient.create();
@@ -36,18 +57,17 @@ async function handleAuthenticated() {
     
     principalIdInput.value = principal.toString();
     
-    actor = createActor(process.env.CANISTER_ID_BACKEND, {
-        agentOptions: {
-            identity,
-        },
-    });
-    
-    await updateBalance();
-    
-    if (balanceInterval) {
-        clearInterval(balanceInterval);
+    try {
+        actor = await initActor(identity);
+        await updateBalance();
+        
+        if (balanceInterval) {
+            clearInterval(balanceInterval);
+        }
+        balanceInterval = setInterval(updateBalance, 5000);
+    } catch (e) {
+        console.error("Failed to initialize actor:", e);
     }
-    balanceInterval = setInterval(updateBalance, 5000);
 }
 
 function formatBalance(rawBalance) {
