@@ -2,14 +2,18 @@ import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
 import { backend } from "declarations/backend";
+import { idlFactory } from "./usdc.did.js";
 
 let authClient;
 let identity;
 let actor;
+let usdcActor;
 let balanceInterval;
 let feeInterval;
 let currentBalance = 0n;
 let currentFee = 0n;
+
+const USDC_CANISTER_ID = "yfumr-cyaaa-aaaar-qaela-cai";
 
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
@@ -27,7 +31,7 @@ const withdrawAmountInput = document.getElementById("withdrawAmount");
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const host = isLocalhost ? "http://localhost:4943" : "https://icp0.io";
 
-async function initActor(identity) {
+async function initActors(identity) {
     try {
         const agent = new HttpAgent({
             identity,
@@ -42,9 +46,16 @@ async function initActor(identity) {
         }
 
         actor = backend;
-        return actor;
+        
+        // Initialize USDC actor
+        usdcActor = Actor.createActor(idlFactory, {
+            agent,
+            canisterId: USDC_CANISTER_ID,
+        });
+
+        return { actor, usdcActor };
     } catch (e) {
-        console.error("Failed to initialize actor:", e);
+        console.error("Failed to initialize actors:", e);
         throw e;
     }
 }
@@ -72,8 +83,11 @@ async function handleAuthenticated() {
         
         principalIdInput.value = principal.toString();
         
-        actor = await initActor(identity);
-        console.log("Actor initialized with backend canister");
+        const actors = await initActors(identity);
+        actor = actors.actor;
+        usdcActor = actors.usdcActor;
+        
+        console.log("Actors initialized");
         
         await actor.updateFee();
         await updateBalance();
@@ -109,13 +123,17 @@ function formatBalance(rawBalance) {
 }
 
 async function updateBalance() {
-    if (!actor) {
-        console.warn("Actor not initialized, skipping balance update");
+    if (!usdcActor) {
+        console.warn("USDC Actor not initialized, skipping balance update");
         return;
     }
 
     try {
-        currentBalance = await actor.getBalance();
+        const principal = identity.getPrincipal();
+        currentBalance = await usdcActor.icrc1_balance_of({
+            owner: principal,
+            subaccount: []
+        });
         balanceElement.textContent = `${formatBalance(currentBalance)} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);
@@ -165,6 +183,7 @@ logoutButton.addEventListener("click", async () => {
     }
     await authClient.logout();
     actor = null;
+    usdcActor = null;
     mainSection.classList.add("d-none");
     loginSection.classList.remove("d-none");
     principalIdInput.value = "";
