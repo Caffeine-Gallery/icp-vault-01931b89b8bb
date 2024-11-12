@@ -1,7 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { canisterId, idlFactory } from "declarations/backend";
+import { backend } from "declarations/backend";
 
 let authClient;
 let identity;
@@ -41,14 +41,8 @@ async function initActor(identity) {
             });
         }
 
-        if (!canisterId) {
-            throw new Error("Canister ID not found. Make sure the backend canister is deployed.");
-        }
-
-        return Actor.createActor(idlFactory, {
-            agent,
-            canisterId,
-        });
+        actor = backend;
+        return actor;
     } catch (e) {
         console.error("Failed to initialize actor:", e);
         throw e;
@@ -79,6 +73,8 @@ async function handleAuthenticated() {
         principalIdInput.value = principal.toString();
         
         actor = await initActor(identity);
+        console.log("Actor initialized with backend canister");
+        
         await actor.updateFee();
         await updateBalance();
         await updateFee();

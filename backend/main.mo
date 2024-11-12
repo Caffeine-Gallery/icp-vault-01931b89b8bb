@@ -30,10 +30,10 @@ actor class TokenDApp() {
         icrc1_fee : shared query () -> async Nat;
     };
 
-    let ckSepoliaUSDC_canister : Token = actor("24ago-6iaaa-aaaab-qaj3q-cai");
+    let ckSepoliaUSDC_canister : Token = actor("yfumr-cyaaa-aaaar-qaela-cai");
 
     public shared func updateFee() : async () {
-        Debug.print("Updating fee from canister: 24ago-6iaaa-aaaab-qaj3q-cai");
+        Debug.print("Updating fee from canister: yfumr-cyaaa-aaaar-qaela-cai");
         cachedFee := await ckSepoliaUSDC_canister.icrc1_fee();
         Debug.print("Fee updated to: " # debug_show(cachedFee));
     };
@@ -42,7 +42,7 @@ actor class TokenDApp() {
         Debug.print("Withdraw request from: " # debug_show(caller));
         Debug.print("To: " # debug_show(to));
         Debug.print("Amount: " # debug_show(amount));
-        Debug.print("Using token canister: 24ago-6iaaa-aaaab-qaj3q-cai");
+        Debug.print("Using token canister: yfumr-cyaaa-aaaar-qaela-cai");
         
         if (Principal.isAnonymous(caller)) {
             Debug.print("Error: Anonymous principal not allowed");
@@ -106,7 +106,7 @@ actor class TokenDApp() {
 
     public shared({ caller }) func getBalance() : async Nat {
         Debug.print("Getting balance for: " # debug_show(caller));
-        Debug.print("Using token canister: 24ago-6iaaa-aaaab-qaj3q-cai");
+        Debug.print("Using token canister: yfumr-cyaaa-aaaar-qaela-cai");
         
         if (Principal.isAnonymous(caller)) {
             Debug.print("Anonymous principal attempted to get balance");
