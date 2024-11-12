@@ -31,9 +31,7 @@ async function updateFeeDisplay() {
 
 document.getElementById('loginButton').addEventListener('click', async () => {
     await authClient.login({
-        identityProvider: process.env.DFX_NETWORK === "ic" 
-            ? "https://identity.ic0.app"
-            : `http://localhost:4943/?canisterId=${process.env.CANISTER_ID_internet_identity}`,
+        identityProvider: "https://identity.ic0.app",
         onSuccess: handleAuthenticated,
     });
 });
