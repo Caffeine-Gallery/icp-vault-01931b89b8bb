@@ -90,20 +90,14 @@ async function handleAuthenticated() {
         actor = actors.actor;
         usdcActor = actors.usdcActor;
         
-        console.log("Actors initialized with identity:", principal.toString());
-        
         await actor.updateFee();
         await updateBalance();
         await updateFee();
         
-        if (balanceInterval) {
-            clearInterval(balanceInterval);
-        }
+        if (balanceInterval) clearInterval(balanceInterval);
         balanceInterval = setInterval(updateBalance, 5000);
 
-        if (feeInterval) {
-            clearInterval(feeInterval);
-        }
+        if (feeInterval) clearInterval(feeInterval);
         feeInterval = setInterval(async () => {
             await actor.updateFee();
             await updateFee();
@@ -126,10 +120,7 @@ function formatBalance(rawBalance) {
 }
 
 async function updateBalance() {
-    if (!usdcActor || !identity) {
-        console.warn("USDC Actor or identity not initialized, skipping balance update");
-        return;
-    }
+    if (!usdcActor || !identity) return;
 
     try {
         const principal = identity.getPrincipal();
@@ -178,12 +169,8 @@ loginButton.addEventListener("click", async () => {
 });
 
 logoutButton.addEventListener("click", async () => {
-    if (balanceInterval) {
-        clearInterval(balanceInterval);
-    }
-    if (feeInterval) {
-        clearInterval(feeInterval);
-    }
+    if (balanceInterval) clearInterval(balanceInterval);
+    if (feeInterval) clearInterval(feeInterval);
     await authClient.logout();
     actor = null;
     usdcActor = null;
@@ -221,14 +208,6 @@ withdrawButton.addEventListener("click", async () => {
 
     showLoader();
     try {
-        console.log("Initiating transfer:", {
-            amount: amount.toString(),
-            recipient: recipientPrincipal,
-            fee: currentFee.toString(),
-            balance: currentBalance.toString(),
-            caller: identity.getPrincipal().toString()
-        });
-
         const recipient = Principal.fromText(recipientPrincipal);
         const result = await usdcActor.icrc1_transfer({
             to: {
@@ -241,8 +220,6 @@ withdrawButton.addEventListener("click", async () => {
             from_subaccount: [],
             created_at_time: []
         });
-
-        console.log("Transfer result:", result);
 
         if ('Ok' in result) {
             alert("Transfer successful!");

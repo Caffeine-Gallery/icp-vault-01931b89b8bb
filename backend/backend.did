@@ -1,13 +1,4 @@
-type TokenDApp = 
- service {
-   getBalance: () -> (nat);
-   getFee: () -> (nat) query;
-   updateFee: () -> ();
-   withdraw: (principal, nat) -> (Result);
- };
-type Result = 
- variant {
-   err: text;
-   ok;
- };
-service : () -> TokenDApp
+service : {
+  getFee: () -> (nat) query;
+  updateFee: () -> ();
+}
