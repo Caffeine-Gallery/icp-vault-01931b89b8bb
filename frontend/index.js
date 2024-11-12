@@ -32,21 +32,18 @@ async function handleAuthenticated() {
     
     identity = await authClient.getIdentity();
     const principal = identity.getPrincipal();
+    console.log("Authenticated with principal:", principal.toString());
     
-    // Display the user's principal
     principalIdInput.value = principal.toString();
     
-    // Create actor with identity
     actor = createActor(process.env.CANISTER_ID_BACKEND, {
         agentOptions: {
             identity,
         },
     });
     
-    // Initial balance update
     await updateBalance();
     
-    // Start balance polling
     if (balanceInterval) {
         clearInterval(balanceInterval);
     }
@@ -54,8 +51,9 @@ async function handleAuthenticated() {
 }
 
 function formatBalance(rawBalance) {
-    const decimals = 6; // USDC has 6 decimal places
+    const decimals = 6;
     const balance = Number(rawBalance) / Math.pow(10, decimals);
+    console.log("Raw balance:", rawBalance.toString(), "Formatted balance:", balance);
     return new Intl.NumberFormat('en-US', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
@@ -65,6 +63,7 @@ function formatBalance(rawBalance) {
 async function updateBalance() {
     try {
         const balance = await actor.getBalance();
+        console.log("Retrieved balance:", balance.toString());
         balanceElement.textContent = `${formatBalance(balance)} ckSepoliaUSDC`;
     } catch (e) {
         console.error("Failed to get balance:", e);

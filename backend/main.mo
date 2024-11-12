@@ -9,10 +9,15 @@ import Debug "mo:base/Debug";
 import Result "mo:base/Result";
 
 actor class TokenDApp() {
+    type Account = {
+        owner : Principal;
+        subaccount : ?[Nat8];
+    };
+
     type Token = actor {
-        icrc1_balance_of : shared query { owner : Principal; subaccount : ?[Nat8] } -> async Nat;
+        icrc1_balance_of : shared query (Account) -> async Nat;
         icrc1_transfer : shared {
-            to : { owner : Principal; subaccount : ?[Nat8] };
+            to : Account;
             amount : Nat;
             fee : ?Nat;
             memo : ?[Nat8];
@@ -28,14 +33,23 @@ actor class TokenDApp() {
             return #err("Anonymous principal not allowed");
         };
 
-        let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null });
+        let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({
+            owner = caller;
+            subaccount = null;
+        });
+
+        Debug.print("Current balance for " # Principal.toText(caller) # ": " # debug_show(balance));
+
         if (balance < amount) {
             return #err("Insufficient balance");
         };
 
         try {
             let result = await ckSepoliaUSDC_canister.icrc1_transfer({
-                to = { owner = to; subaccount = null };
+                to = {
+                    owner = to;
+                    subaccount = null;
+                };
                 amount = amount;
                 fee = null;
                 memo = null;
@@ -61,8 +75,15 @@ actor class TokenDApp() {
             return 0;
         };
         
+        Debug.print("Checking balance for principal: " # Principal.toText(caller));
+        
         try {
-            await ckSepoliaUSDC_canister.icrc1_balance_of({ owner = caller; subaccount = null })
+            let balance = await ckSepoliaUSDC_canister.icrc1_balance_of({
+                owner = caller;
+                subaccount = null;
+            });
+            Debug.print("Balance retrieved: " # debug_show(balance));
+            balance
         } catch (e) {
             Debug.print("Failed to get balance: " # Error.message(e));
             0
