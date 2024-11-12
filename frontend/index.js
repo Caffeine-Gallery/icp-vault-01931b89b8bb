@@ -1,7 +1,7 @@
 import { AuthClient } from "@dfinity/auth-client";
 import { HttpAgent, Actor } from "@dfinity/agent";
 import { Principal } from "@dfinity/principal";
-import { idlFactory as backendIdlFactory } from "declarations/backend";
+import { backend } from "declarations/backend";
 import { idlFactory as usdcIdlFactory } from "./usdc.did.js";
 
 let authClient;
@@ -14,7 +14,6 @@ let currentBalance = 0n;
 let currentFee = 0n;
 
 const USDC_CANISTER_ID = "yfumr-cyaaa-aaaar-qaela-cai";
-const BACKEND_CANISTER_ID = process.env.CANISTER_ID_BACKEND;
 
 const loginButton = document.getElementById("loginButton");
 const logoutButton = document.getElementById("logoutButton");
@@ -46,11 +45,7 @@ async function initActors(identity) {
             });
         }
 
-        // Create backend actor with authenticated identity
-        actor = Actor.createActor(backendIdlFactory, {
-            agent,
-            canisterId: BACKEND_CANISTER_ID,
-        });
+        actor = backend;
         
         // Initialize USDC actor with authenticated identity
         usdcActor = Actor.createActor(usdcIdlFactory, {
